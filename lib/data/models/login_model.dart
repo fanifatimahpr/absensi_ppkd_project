@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
           // NAVIGASI KE HOME SETELAH LOGIN
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
+            MaterialPageRoute(builder: (_) => HomeScreen()),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -52,9 +52,9 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error: $e")));
       }
     }
   }
@@ -117,11 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Form(
         key: _formKey,
         child: Column(
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 15),
-            _buildForm(),
-          ],
+          children: [_buildHeader(), const SizedBox(height: 15), _buildForm()],
         ),
       ),
     );
@@ -135,11 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
         fontSize: 32,
         foreground: Paint()
           ..shader = const LinearGradient(
-            colors: [
-              Color(0xff6d1f42),
-              Color(0xffef6f3c),
-              Color(0xff6d1f42),
-            ],
+            colors: [Color(0xff6d1f42), Color(0xffef6f3c), Color(0xff6d1f42)],
           ).createShader(const Rect.fromLTWH(0, 0, 200, 100)),
       ),
     );
@@ -154,7 +146,8 @@ class _LoginScreenState extends State<LoginScreen> {
           controller: emailCtrl,
           hint: "contoh: nama@example.com",
           validator: (value) {
-            if (value == null || value.isEmpty) return "Email tidak boleh kosong";
+            if (value == null || value.isEmpty)
+              return "Email tidak boleh kosong";
             if (!RegExp(
               r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$",
             ).hasMatch(value)) {
@@ -183,11 +176,13 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(children: [
-          Icon(icon, size: 18, color: const Color(0xff6d1f42)),
-          const SizedBox(width: 6),
-          Text(label, style: const TextStyle(color: Color(0xff6d1f42))),
-        ]),
+        Row(
+          children: [
+            Icon(icon, size: 18, color: const Color(0xff6d1f42)),
+            const SizedBox(width: 6),
+            Text(label, style: const TextStyle(color: Color(0xff6d1f42))),
+          ],
+        ),
         const SizedBox(height: 3),
 
         TextFormField(
@@ -211,11 +206,13 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(children: const [
-          Icon(Icons.lock, size: 18, color: Color(0xff6d1f42)),
-          SizedBox(width: 6),
-          Text("Password", style: TextStyle(color: Color(0xff6d1f42))),
-        ]),
+        Row(
+          children: const [
+            Icon(Icons.lock, size: 18, color: Color(0xff6d1f42)),
+            SizedBox(width: 6),
+            Text("Password", style: TextStyle(color: Color(0xff6d1f42))),
+          ],
+        ),
         const SizedBox(height: 6),
 
         TextFormField(

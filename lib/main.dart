@@ -3,8 +3,14 @@ import 'package:flutter_project_ppkd/views/auth/bottom_nav.dart';
 import 'package:flutter_project_ppkd/views/auth/login_screen.dart';
 import 'package:flutter_project_ppkd/views/auth/register_screen.dart';
 import 'package:flutter_project_ppkd/views/home/home_screen.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inisialisasi locale Indonesia
+  await initializeDateFormatting('id_ID', null);
+
   runApp(const MyApp());
 }
 
@@ -34,7 +40,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home:  RegisterScreen(),
+      home: BottomNavAbsensi(),
     );
   }
 }
