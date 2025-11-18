@@ -1,237 +1,115 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_project_ppkd/data/models/attendance_model.dart';
+import 'package:flutter_project_ppkd/service/api_absensi.dart';
+import 'package:shimmer/shimmer.dart';
 
-class ProfileScreen extends StatelessWidget {
-  final Map<String, dynamic> user;
-  final VoidCallback onLogout;
+class AttendancePage extends StatefulWidget {
+  final String token;
 
-  const ProfileScreen({
-    super.key,
-    required this.user,
-    required this.onLogout,
-  });
+  const AttendancePage({super.key, required this.token});
+
+  @override
+  State<AttendancePage> createState() => _AttendancePageState();
+}
+
+class _AttendancePageState extends State<AttendancePage>
+    with SingleTickerProviderStateMixin {
+  AttendanceData? today;
+  bool loading = true;
+  late AnimationController _controller;
+  late Animation<double> _fade;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchData();
+    _controller = AnimationController(
+        duration: const Duration(milliseconds: 600), vsync: this);
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+  }
+
+  Future<void> fetchData() async {
+    final api = AbsensiApi();
+    final res = await api.getAbsensiToday(widget.token);
+
+    setState(() {
+      today = res?.data;
+      loading = false;
+    });
+
+    _controller.forward();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
+      appBar: AppBar(title: const Text("Absensi Hari Ini")),
+      body: loading ? shimmerLoader() : FadeTransition(opacity: _fade, child: content()),
+    );
+  }
+
+  Widget shimmerLoader() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey.shade300,
+      highlightColor: Colors.white,
+      child: Column(
         children: [
-          _buildBackground(),
-          _buildLayer(),
+          Container(height: 90, margin: const EdgeInsets.all(16), color: Colors.grey),
+          Container(height: 90, margin: const EdgeInsets.all(16), color: Colors.grey),
         ],
       ),
     );
   }
 
-  // =========================================================
-  // BACKGROUND LAYER
-  // =========================================================
-  Widget _buildBackground() {
-    return Stack(
-      children: [
-        Positioned(
-          top: 80,
-          left: 40,
-          child: _blurCircle(
-            160,
-            160,
-            const [Colors.blue, Colors.cyan],
-            40,
-          ),
-        ),
-        Positioned(
-          bottom: 140,
-          right: 40,
-          child: _blurCircle(
-            130,
-            130,
-            const [Colors.pink, Colors.purple],
-            30,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Circle blur reusable
-  Widget _blurCircle(
-      double w, double h, List<Color> colors, double blurAmount) {
-    return Container(
-      width: w,
-      height: h,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: colors),
-        shape: BoxShape.circle,
-      ),
-      child: Opacity(
-        opacity: 0.35,
-        child: ClipOval(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: blurAmount, sigmaY: blurAmount),
-            child: Container(color: Colors.transparent),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // =========================================================
-  // FRONT LAYER (Main Content)
-  // =========================================================
-  Widget _buildLayer() {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 40),
-            _buildProfilePicture(),
-            const SizedBox(height: 40),
-            _buildInfoCards(),
-            const SizedBox(height: 30),
-            _buildLogoutButton(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // =========================================================
-  // UI SECTIONS
-  // =========================================================
-
-  Widget _buildHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        Text(
-          "Profil Saya",
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-        SizedBox(height: 4),
-        Text(
-          "Informasi data diri",
-          style: TextStyle(fontSize: 15, color: Colors.black54),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProfilePicture() {
-    return Center(
-      child: Stack(
+  Widget content() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
         children: [
-          Container(
-            width: 130,
-            height: 130,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Colors.purple,
-                  Colors.pink,
-                  Colors.orange,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 20,
-                  offset: Offset(0, 10),
-                ),
-              ],
-            ),
-            child: const Icon(Icons.person, color: Colors.white, size: 60),
+          absensiCard(
+            title: "Absen Masuk",
+            value: today?.checkInTime ?? "Belum Absen",
+            subtitle: today?.checkInAddress ?? "-",
+            icon: Icons.login,
+            color: Colors.green,
           ),
-          Positioned(
-            bottom: -2,
-            right: -2,
-            child: Container(
-              width: 45,
-              height: 45,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Colors.green, Colors.teal],
-                ),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: const [
-                  BoxShadow(color: Colors.black26, blurRadius: 10),
-                ],
-              ),
-              child: const Icon(Icons.check, color: Colors.white),
-            ),
+          const SizedBox(height: 12),
+          absensiCard(
+            title: "Absen Keluar",
+            value: today?.checkOutTime ?? "Belum Absen",
+            subtitle: today?.checkOutAddress ?? "-",
+            icon: Icons.logout,
+            color: Colors.red,
           ),
+          const SizedBox(height: 24),
+          izinCard(),
         ],
       ),
     );
   }
 
-  Widget _buildInfoCards() {
-    return Column(
-      children: [
-        _infoCard(
-          icon: Icons.person,
-          title: "Nama Lengkap",
-          value: user["name"] ?? "-",
-          colors: const [Colors.purple, Colors.pink],
-        ),
-        _infoCard(
-          icon: Icons.mail,
-          title: "Email",
-          value: user["email"] ?? "-",
-          colors: const [Colors.blue, Colors.cyan],
-        ),
-        _infoCard(
-          icon: Icons.work,
-          title: "Posisi",
-          value: user["position"] ?? "-",
-          colors: const [Colors.orange, Colors.yellow],
-        ),
-        _infoCard(
-          icon: Icons.apartment,
-          title: "Departemen",
-          value: user["department"] ?? "-",
-          colors: const [Colors.green, Colors.teal],
-        ),
-      ],
-    );
-  }
-
-  Widget _infoCard({
-    required IconData icon,
+  Widget absensiCard({
     required String title,
     required String value,
-    required List<Color> colors,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.85),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white30),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 10),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0,3)),
         ],
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: colors),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: Colors.white),
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: color.withOpacity(0.15),
+            child: Icon(icon, color: color),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -239,12 +117,17 @@ class ProfileScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title,
-                    style:
-                        const TextStyle(color: Colors.black54, fontSize: 13)),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 Text(value,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600)),
+                    style: TextStyle(
+                        fontSize: 22,
+                        color: (value == "Belum Absen")
+                            ? Colors.red
+                            : Colors.black,
+                        fontWeight: FontWeight.w600)),
+                Text(subtitle, style: const TextStyle(color: Colors.grey)),
               ],
             ),
           ),
@@ -253,21 +136,26 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLogoutButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 55,
-      child: ElevatedButton.icon(
-        onPressed: onLogout,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+  Widget izinCard() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.blue.shade200),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.note_alt, color: Colors.blue, size: 26),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text("Ajukan Perizinan",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           ),
-        ),
-        icon: const Icon(Icons.logout),
-        label: const Text("Keluar", style: TextStyle(fontSize: 18)),
+
+          /// ➤ Tambahan icon panah kanan (indikasi slider)
+          const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.blue),
+        ],
       ),
     );
   }

@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_project_ppkd/service/api.dart';
 import 'package:flutter_project_ppkd/views/auth/login_screen.dart';
+import 'package:flutter_project_ppkd/config/endpoint.dart';
+import 'package:http/http.dart' as http;
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -19,6 +23,8 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   bool isLoadingTraining = true;
   bool isLoadingBatch = true;
+  bool showPassword = false;
+  bool isLoading = false;
 
     String? selectedGender;
 
@@ -32,29 +38,104 @@ class _RegisterScreenState extends State<RegisterScreen>
   final AuthAPI _api = AuthAPI();
 
 
-  bool showPassword = false;
+  // bool showPassword = false;
 
-  void handleSubmit() {
+  Future<void> registerUser() async {
+    setState(() => isLoading = true);
+
+    final url = Uri.parse("https://your-api-url.com/api/register"); // GANTI URL API Kamu
+
+    final body = {
+      "name": nameCtrl.text,
+      "email": emailCtrl.text,
+      "password": passwordCtrl.text,
+      "jenis_kelamin": selectedGender, // L / P
+      "profile_photo": "", // kalau belum ada upload, kosongkan dulu
+      "batch_id": int.tryParse(batchCtrl.text),
+      "training_id": int.tryParse(trainingCtrl.text),
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(body),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Jika sukses
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Registrasi berhasil")),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data["message"] ?? "Error tidak diketahui")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal terhubung ke server: $e")),
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  void handleSubmit() async {
   if (_formKey.currentState!.validate()) {
+
     final formData = {
       "name": nameCtrl.text,
       "email": emailCtrl.text,
-      "gender": selectedGender,
-      "batches": selectedBatch,
-      "trainings": selectedTraining,
       "password": passwordCtrl.text,
+      "jenis_kelamin": selectedGender,
+      "profile_photo": "", // kalau belum upload, isi kosong
+      "batch_id": selectedBatch,
+      "training_id": selectedTraining,
     };
 
-    print("Form submitted: $formData");
+    try {
+      // final response = await http.post(
+      //   Uri.parse(Endpoint.register),
+      //   headers: {"Content-Type": "application/json"},
+      //   body: jsonEncode(formData),
+      // );
+        final response = await AuthAPI.register(formData);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Registrasi berhasil!")),
-    );
+      print(jsonEncode(formData));
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
+      if (response.data != null) {
+        // Parsing response 
+        // final data = jsonDecode(response.body);
+
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Registrasi berhasil")),
+        );
+
+        // Pindahkan ke halaman login
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      } else {
+        // print(response.statusCode);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal registrasi")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    }
   }
 }
 
@@ -150,6 +231,8 @@ void fetchBatchData() async {
             _buildHeader(),
             const SizedBox(height: 15),
             _buildForm(),
+             const SizedBox(height: 20),
+            _buildLoginText(),
           ],
         ),
       ),
@@ -443,6 +526,39 @@ InputDecoration _dropdownDecoration() {
       child: const Text(
         "Register Here",
         style: TextStyle(color: Colors.white, fontSize: 18),
+      ),
+    );
+  }
+  Widget _buildLoginText() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      },
+      child: RichText(
+        textAlign: TextAlign.center,
+        text: const TextSpan(
+          children: [
+            TextSpan(
+              text: "Sudah punya akun? ",
+              style: TextStyle(
+                color: Color(0xff6d1f42),
+                fontSize: 14,
+              ),
+            ),
+            TextSpan(
+              text: "Log in",
+              style: TextStyle(
+                color: Color(0xffef6f3c),
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_project_ppkd/service/api.dart';
 import 'package:flutter_project_ppkd/views/auth/bottom_nav.dart';
@@ -228,14 +229,16 @@ Future<void> _handleLogin() async {
 
   setState(() => isLoading = true);
 
-  bool isSuccess = await AuthAPI().login(
-    emailCtrl.text.trim(),
-    passwordCtrl.text.trim(),
-  );
+  final response = await AuthAPI.login(emailCtrl.text, passwordCtrl.text);
+
+  // bool isSuccess = await AuthAPI.login(
+  //   emailCtrl.text.trim(),
+  //   passwordCtrl.text.trim(),
+  // );
 
   setState(() => isLoading = false);
 
-  if (isSuccess) {
+  if (response.data != null) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Login berhasil")),
     );

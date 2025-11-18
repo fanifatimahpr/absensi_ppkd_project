@@ -1,10 +1,12 @@
 import 'dart:convert';
 
+import 'package:flutter_project_ppkd/data/models/user_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PreferenceHandler {
   static const String tokenKey = "user_token";
   static const String userKey = "user_data";
+  static const String userName = "user_name";
 
   // SAVE TOKEN
   static Future<void> saveToken(String token) async {
@@ -57,4 +59,13 @@ class PreferenceHandler {
     await prefs.remove(tokenKey);
     await prefs.remove(userKey);
   }
+
+    // GET USER NAME ONLY
+  static Future<String?> getName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(userName);
+  }
+
+
+  
 }

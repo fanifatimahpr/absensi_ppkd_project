@@ -1,4 +1,9 @@
+
 import 'package:flutter/material.dart';
+import 'package:flutter_project_ppkd/views/history/history_screen.dart';
+import 'package:flutter_project_ppkd/views/home/home_screen.dart';
+import 'package:flutter_project_ppkd/views/maps/maps_screen.dart';
+import 'package:flutter_project_ppkd/views/profile/profile_screen.dart';
 
 class BottomNavAbsensi extends StatefulWidget {
   const BottomNavAbsensi({super.key});
@@ -9,13 +14,8 @@ class BottomNavAbsensi extends StatefulWidget {
 
 class _BottomNavAbsensiState extends State<BottomNavAbsensi> {
   int currentIndex = 0;
-
-  final List<Widget> pages = const [
-    Center(child: Text("Home Page")),
-    Center(child: Text("Perizinan Page")),
-    Center(child: Text("Maps Page")),
-    Center(child: Text("Profile Page")),
-  ];
+  
+  final List<Widget> pages = const [HomeScreen(), HistoryScreen(), MapsScreen(),];
 
   final List<Color> activeColors = const [
     Color(0xff6d1f42),
@@ -34,10 +34,8 @@ class _BottomNavAbsensiState extends State<BottomNavAbsensi> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true, // allow floating effect
+      extendBody: true,
       body: pages[currentIndex],
-
-      // ------------------ FLOATING NAVIGATION BAR ------------------
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.only(bottom: 24, left: 20, right: 20),
         child: Container(
@@ -69,7 +67,9 @@ class _BottomNavAbsensiState extends State<BottomNavAbsensi> {
                   curve: Curves.easeOutBack,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isActive ? activeColors[index].withOpacity(.2) : Colors.transparent,
+                    color: isActive
+                        ? activeColors[index].withOpacity(.2)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: AnimatedScale(
@@ -78,7 +78,9 @@ class _BottomNavAbsensiState extends State<BottomNavAbsensi> {
                     child: Icon(
                       icons[index],
                       size: isActive ? 30 : 26,
-                      color: isActive ? activeColors[index] : Colors.grey.shade500,
+                      color: isActive
+                          ? activeColors[index]
+                          : Colors.grey.shade500,
                     ),
                   ),
                 ),
