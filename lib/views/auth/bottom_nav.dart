@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_project_ppkd/views/history/history_screen.dart';
 import 'package:flutter_project_ppkd/views/home/home_screen.dart';
-import 'package:flutter_project_ppkd/views/maps/maps_screen.dart';
+import 'package:flutter_project_ppkd/views/permit/permit_screen.dart';
 import 'package:flutter_project_ppkd/views/profile/profile_screen.dart';
 
 class BottomNavAbsensi extends StatefulWidget {
@@ -17,13 +17,13 @@ class _BottomNavAbsensiState extends State<BottomNavAbsensi> {
 
 
   // GANTI PAGES MENJADI HALAMAN SEBENARNYA
-  final List<Widget> pages = const [HomeScreen(), HistoryScreen(), MapsScreen()];
+  final List<Widget> pages =  [HomeScreen(), HistoryScreen(), PermitScreen(), ProfileScreen()];
 
   final List<Color> activeColors = const [
     Color(0xff6d1f42),
-    Color(0xffd3b6d3),
-    Color(0xffefce7b),
-    Color(0xffef6f3c),
+    Color(0xff275185),
+    Color(0xff6d1f42),
+    Color(0xff275185),
   ];
 
   final List<IconData> icons = const [

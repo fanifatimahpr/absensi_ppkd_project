@@ -1,9 +1,7 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_project_ppkd/service/api.dart';
 import 'package:flutter_project_ppkd/views/auth/login_screen.dart';
-import 'package:flutter_project_ppkd/config/endpoint.dart';
 import 'package:http/http.dart' as http;
 
 class RegisterScreen extends StatefulWidget {
@@ -20,13 +18,12 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   String? selectedTraining;
   String? selectedBatch;
+  String? selectedGender;
 
   bool isLoadingTraining = true;
   bool isLoadingBatch = true;
   bool showPassword = false;
   bool isLoading = false;
-
-    String? selectedGender;
 
   final _formKey = GlobalKey<FormState>();
 
@@ -37,149 +34,83 @@ class _RegisterScreenState extends State<RegisterScreen>
   final passwordCtrl = TextEditingController();
   final AuthAPI _api = AuthAPI();
 
+  @override
+  void initState() {
+    super.initState();
+    fetchTrainingData();
+    fetchBatchData();
+  }
 
-  // bool showPassword = false;
+  void fetchTrainingData() async {
+    final response = await _api.getTrainings();
+    if (!mounted) return;
 
-  Future<void> registerUser() async {
-    setState(() => isLoading = true);
+    setState(() {
+      trainingList = response["data"];
+      isLoadingTraining = false;
+    });
+  }
 
-    final url = Uri.parse("https://your-api-url.com/api/register"); // GANTI URL API Kamu
+  void fetchBatchData() async {
+    final response = await _api.getBatches();
+    if (!mounted) return;
 
-    final body = {
-      "name": nameCtrl.text,
-      "email": emailCtrl.text,
-      "password": passwordCtrl.text,
-      "jenis_kelamin": selectedGender, // L / P
-      "profile_photo": "", // kalau belum ada upload, kosongkan dulu
-      "batch_id": int.tryParse(batchCtrl.text),
-      "training_id": int.tryParse(trainingCtrl.text),
-    };
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(body),
-      );
-
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // Jika sukses
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Registrasi berhasil")),
-        );
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data["message"] ?? "Error tidak diketahui")),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Gagal terhubung ke server: $e")),
-      );
-    } finally {
-      setState(() => isLoading = false);
-    }
+    setState(() {
+      batchList = response["data"];
+      isLoadingBatch = false;
+    });
   }
 
   void handleSubmit() async {
-  if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState!.validate()) {
+      final formData = {
+        "name": nameCtrl.text,
+        "email": emailCtrl.text,
+        "password": passwordCtrl.text,
+        "jenis_kelamin": selectedGender,
+        "profile_photo": "",
+        "batch_id": selectedBatch,
+        "training_id": selectedTraining,
+      };
 
-    final formData = {
-      "name": nameCtrl.text,
-      "email": emailCtrl.text,
-      "password": passwordCtrl.text,
-      "jenis_kelamin": selectedGender,
-      "profile_photo": "", // kalau belum upload, isi kosong
-      "batch_id": selectedBatch,
-      "training_id": selectedTraining,
-    };
-
-    try {
-      // final response = await http.post(
-      //   Uri.parse(Endpoint.register),
-      //   headers: {"Content-Type": "application/json"},
-      //   body: jsonEncode(formData),
-      // );
+      try {
         final response = await AuthAPI.register(formData);
 
-      print(jsonEncode(formData));
-
-      if (response.data != null) {
-        // Parsing response 
-        // final data = jsonDecode(response.body);
-
-
+        if (response.data != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Registrasi berhasil")),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Gagal registrasi")),
+          );
+        }
+      } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Registrasi berhasil")),
-        );
-
-        // Pindahkan ke halaman login
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
-      } else {
-        // print(response.statusCode);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Gagal registrasi")),
+          SnackBar(content: Text("Error: $e")),
         );
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
     }
   }
-}
 
-@override
-void initState() {
-  super.initState();
-  fetchTrainingData();
-  fetchBatchData();
-}
-
-void fetchTrainingData() async {
-  final response = await _api.getTrainings();
-  if (!mounted) return;
-
-  setState(() {
-    trainingList = response["data"];   // ✔ Ambil list yg benar
-    isLoadingTraining = false;
-  });
-}
-
-void fetchBatchData() async {
-  final response = await _api.getBatches();
-  if (!mounted) return;
-
-  setState(() {
-    batchList = response["data"];      // ✔ Ambil list yg benar
-    isLoadingBatch = false;
-  });
-}
-
-
-
-
+  // =========================================================================
+  // UI BUILD
+  // =========================================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffefce7b),
+      backgroundColor: const Color(0xfff5f5f5),
       body: Stack(
         children: [
-          _buildBackground(),
+          _backgroundDecor(),
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
-              child: _buildMainCard(),
+              child: _mainCard(),
             ),
           ),
         ],
@@ -187,109 +118,111 @@ void fetchBatchData() async {
     );
   }
 
-  Widget _buildBackground() {
+  // ---------------------------------------------------------------------------
+  // BACKGROUND
+  // ---------------------------------------------------------------------------
+  Widget _backgroundDecor() {
     return Stack(
       children: [
         Positioned(
-          top: -80,
-          left: -80,
-          child: _circle(250, const Color(0xffd3b6d3), opacity: .6),
+          top: -120,
+          right: -80,
+          child: _circle(280, const Color(0xFFD3B6D3).withOpacity(.35)),
         ),
         Positioned(
-          bottom: -120,
-          right: -100,
-          child: _circle(360, const Color(0xffef6f3c), opacity: .4),
+          bottom: -150,
+          left: -100,
+          child: _circle(340, const Color(0xFF275185).withOpacity(.25)),
         ),
       ],
     );
   }
 
-  Widget _circle(double size, Color color, {double opacity = 1}) {
+  Widget _circle(double size, Color color) {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: color.withOpacity(opacity),
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 
-  Widget _buildMainCard() {
+  // ---------------------------------------------------------------------------
+  // CARD UTAMA
+  // ---------------------------------------------------------------------------
+  Widget _mainCard() {
     return Container(
-      width: 340,
+      width: 360,
+      padding: const EdgeInsets.all(26),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: const [BoxShadow(blurRadius: 20, color: Colors.black26)],
+        borderRadius: BorderRadius.circular(40),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          )
+        ],
       ),
-      padding: const EdgeInsets.all(20),
       child: Form(
         key: _formKey,
         child: Column(
           children: [
-            _buildHeader(),
-            const SizedBox(height: 15),
+            _header(),
+            const SizedBox(height: 10),
             _buildForm(),
-             const SizedBox(height: 20),
-            _buildLoginText(),
+            _loginText(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Text(
+  Widget _header() {
+    return const Text(
       "Register",
       style: TextStyle(
-        fontWeight: FontWeight.bold,
-        fontSize: 32,
-        foreground: Paint()
-          ..shader = const LinearGradient(
-            colors: [
-              Color(0xff6d1f42),
-              Color(0xffef6f3c),
-              Color(0xff6d1f42),
-            ],
-          ).createShader(const Rect.fromLTWH(0, 0, 200, 100)),
+        fontWeight: FontWeight.w900,
+        fontSize: 30,
+        color: Color(0xFF6D1F42),
       ),
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // FORM INPUT
+  // ---------------------------------------------------------------------------
   Widget _buildForm() {
     return Column(
       children: [
-        _inputField(
+        _textField(
           label: "Nama",
           icon: Icons.person,
           controller: nameCtrl,
-          hint: "Nama Lengkap",
-          validator: (value) =>
-              value!.isEmpty ? "Nama tidak boleh kosong" : null,
+          hint: "Nama lengkap",
+          validator: (v) => v!.isEmpty ? "Nama tidak boleh kosong" : null,
         ),
         const SizedBox(height: 15),
 
-        _inputField(
+        _textField(
           label: "Email",
           icon: Icons.email,
           controller: emailCtrl,
-          hint: "contoh: nama@example.com",
+          hint: "email@example.com",
           validator: (value) {
-                  if (value == null || value.isEmpty)
-                    return "Email must be filled";
-                  if (!RegExp(
-                    r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$",
-                  ).hasMatch(value)) {
-                    return "Email not valid";
-                  }
-                  return null;
-                },
+            if (value == null || value.isEmpty) return "Email wajib diisi";
+            if (!RegExp(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+                .hasMatch(value)) {
+              return "Format email salah";
+            }
+            return null;
+          },
         ),
         const SizedBox(height: 15),
 
         _genderDropdown(),
         const SizedBox(height: 15),
+
         _batchDropdown(),
         const SizedBox(height: 15),
 
@@ -304,7 +237,7 @@ void fetchBatchData() async {
     );
   }
 
-  Widget _inputField({
+  Widget _textField({
     required String label,
     required IconData icon,
     required TextEditingController controller,
@@ -315,196 +248,169 @@ void fetchBatchData() async {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(children: [
-          Icon(icon, size: 18, color: Color(0xff6d1f42)),
+          Icon(icon, size: 18, color: const Color(0xFF6D1F42)),
           const SizedBox(width: 6),
-          Text(label, style: const TextStyle(color: Color(0xff6d1f42))),
+          Text(label,
+              style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF6D1F42))),
         ]),
-        const SizedBox(height: 3),
+        const SizedBox(height: 6),
 
         TextFormField(
           controller: controller,
           validator: validator,
-          decoration: InputDecoration(
-            hintText: hint,
-            filled: true,
-            fillColor: Colors.white.withOpacity(.6),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
-              borderSide: const BorderSide(color: Color(0xff6d1f42), width: 3),
-            ),
-              focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide:
-                const BorderSide(color: Color(0xffef6f3c), width: 3),
-            ),
-            ),
-          ),
-        ]
-      );
-  }
-  Widget _genderDropdown() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(children: const [
-        Icon(Icons.people, size: 18, color: Color(0xff6d1f42)),
-        SizedBox(width: 6),
-        Text("Jenis Kelamin",
-            style: TextStyle(color: Color(0xff6d1f42))),
-      ]),
-      const SizedBox(height: 6),
-
-      DropdownButtonFormField<String>(
-        value: selectedGender,
-        hint: const Text("Pilih Jenis Kelamin"),
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: Colors.white.withOpacity(.6),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide:
-                const BorderSide(color: Color(0xff6d1f42), width: 3),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide:
-                const BorderSide(color: Color(0xffef6f3c), width: 3),
-          ),
+          decoration: _inputDecoration(hint),
         ),
-        items: const [
-          DropdownMenuItem(
-            value: "L",
-            child: Text("Laki-Laki"),
-          ),
-          DropdownMenuItem(
-            value: "P",
-            child: Text("Perempuan"),
-          ),
-        ],
-        onChanged: (value) {
-          setState(() {
-            selectedGender = value;
-          });
-        },
-        validator: (value) =>
-            value == null ? "Jenis kelamin wajib dipilih" : null,
+      ],
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      filled: true,
+      fillColor: Colors.white.withOpacity(.7),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(26),
+        borderSide: const BorderSide(color: Color(0xFF6D1F42), width: 2),
       ),
-    ],
-  );
-}
-Widget _trainingDropdown() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(children: const [
-        Icon(Icons.book, size: 18, color: Color(0xff6d1f42)),
-        SizedBox(width: 6),
-        Text("Training", style: TextStyle(color: Color(0xff6d1f42))),
-      ]),
-      const SizedBox(height: 6),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(26),
+        borderSide: const BorderSide(color: Color(0xFF275185), width: 2.6),
+      ),
+    );
+  }
 
-      isLoadingTraining
-          ? const CircularProgressIndicator()
-          : DropdownButtonFormField<String>(
-              value: selectedTraining,
-              hint: const Text("Pilih Training"),
-              decoration: _dropdownDecoration(),
-              items: trainingList.map((item) {
-                return DropdownMenuItem(
-                  value: item["id"].toString(),
-                  child: Text(item["title"]),
-                );
-              }).toList(),
-              onChanged: (value) => setState(() {
-                selectedTraining = value;
-              }),
-              validator: (value) =>
-                  value == null ? "Training wajib dipilih" : null,
-            ),
-    ],
-  );
-}
-Widget _batchDropdown() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(children: const [
-        Icon(Icons.calendar_month, size: 18, color: Color(0xff6d1f42)),
-        SizedBox(width: 6),
-        Text("Batch", style: TextStyle(color: Color(0xff6d1f42))),
-      ]),
-      const SizedBox(height: 6),
+  Widget _genderDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: const [
+          Icon(Icons.people, size: 18, color: Color(0xFF6D1F42)),
+          SizedBox(width: 6),
+          Text("Jenis Kelamin",
+              style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF6D1F42))),
+        ]),
+        const SizedBox(height: 6),
 
-      isLoadingBatch
-          ? const CircularProgressIndicator()
-          : DropdownButtonFormField<String>(
-              value: selectedBatch,
-              hint: const Text("Pilih Batch"),
-              decoration: _dropdownDecoration(),
-              items: batchList.map((item) {
-                return DropdownMenuItem(
-                  value: item["id"].toString(),
-                  child: Text("Batch ${item["batch_ke"]}"),
-                );
-              }).toList(),
-              onChanged: (value) => setState(() {
-                selectedBatch = value;
-              }),
-              validator: (value) =>
-                  value == null ? "Batch wajib dipilih" : null,
-            ),
-    ],
-  );
-}
-InputDecoration _dropdownDecoration() {
-  return InputDecoration(
-    filled: true,
-    fillColor: Colors.white.withOpacity(.6),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(20),
-      borderSide: const BorderSide(color: Color(0xff6d1f42), width: 3),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(20),
-      borderSide: const BorderSide(color: Color(0xffef6f3c), width: 3),
-    ),
-  );
-}
+        DropdownButtonFormField<String>(
+          value: selectedGender,
+          hint: const Text("Pilih jenis kelamin"),
+          decoration: _inputDecoration(""),
+          items: const [
+            DropdownMenuItem(value: "L", child: Text("Laki-laki")),
+            DropdownMenuItem(value: "P", child: Text("Perempuan")),
+          ],
+          onChanged: (v) => setState(() => selectedGender = v),
+          validator: (v) =>
+              v == null ? "Jenis kelamin wajib dipilih" : null,
+        ),
+      ],
+    );
+  }
 
+  Widget _batchDropdown() {
+    return isLoadingBatch
+        ? const Center(child: CircularProgressIndicator())
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: const [
+                Icon(Icons.calendar_month,
+                    size: 18, color: Color(0xFF6D1F42)),
+                SizedBox(width: 6),
+                Text("Batch",
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF6D1F42))),
+              ]),
+              const SizedBox(height: 6),
+
+              DropdownButtonFormField<String>(
+                value: selectedBatch,
+                hint: const Text("Pilih batch"),
+                decoration: _inputDecoration(""),
+                items: batchList.map((item) {
+                  return DropdownMenuItem(
+                    value: item["id"].toString(),
+                    child: Text("Batch ${item["batch_ke"]}"),
+                  );
+                }).toList(),
+                onChanged: (v) => setState(() => selectedBatch = v),
+                validator: (v) =>
+                    v == null ? "Batch wajib dipilih" : null,
+              ),
+            ],
+          );
+  }
+
+  Widget _trainingDropdown() {
+    return isLoadingTraining
+        ? const Center(child: CircularProgressIndicator())
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: const [
+                Icon(Icons.school, size: 18, color: Color(0xFF6D1F42)),
+                SizedBox(width: 6),
+                Text("Training",
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF6D1F42))),
+              ]),
+              const SizedBox(height: 6),
+
+              DropdownButtonFormField<String>(
+                value: selectedTraining,
+                hint: const Text("Pilih training"),
+                decoration: _inputDecoration(""),
+                items: trainingList.map((item) {
+                  return DropdownMenuItem(
+                    value: item["id"].toString(),
+                    child: Text(item["title"]),
+                  );
+                }).toList(),
+                onChanged: (v) => setState(() => selectedTraining = v),
+                validator: (v) =>
+                    v == null ? "Training wajib dipilih" : null,
+              ),
+            ],
+          );
+  }
 
   Widget _passwordField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(children: const [
-          Icon(Icons.lock, size: 18, color: Color(0xff6d1f42)),
+          Icon(Icons.lock, size: 18, color: Color(0xFF6D1F42)),
           SizedBox(width: 6),
-          Text("Password", style: TextStyle(color: Color(0xff6d1f42))),
+          Text("Password",
+              style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF6D1F42))),
         ]),
         const SizedBox(height: 6),
 
         TextFormField(
           controller: passwordCtrl,
           obscureText: !showPassword,
-          validator: (value) {
-            if (value!.isEmpty) return "Password tidak boleh kosong";
-            if (value.length < 6) return "Password minimal 6 karakter";
+          validator: (v) {
+            if (v!.isEmpty) return "Password wajib diisi";
+            if (v.length < 6) return "Minimal 6 karakter";
             return null;
           },
-          decoration: InputDecoration(
-            hintText: "Minimal 6 karakter",
-            filled: true,
-            fillColor: Colors.white.withOpacity(.6),
+          decoration: _inputDecoration("Minimal 6 karakter").copyWith(
             suffixIcon: IconButton(
               icon: Icon(
                 showPassword ? Icons.visibility_off : Icons.visibility,
-                color: const Color(0xff6d1f42),
+                color: const Color(0xFF6D1F42),
               ),
-              onPressed: () => setState(() => showPassword = !showPassword),
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
-              borderSide: const BorderSide(color: Color(0xff6d1f42), width: 3),
+              onPressed: () =>
+                  setState(() => showPassword = !showPassword),
             ),
           ),
         ),
@@ -513,23 +419,26 @@ InputDecoration _dropdownDecoration() {
   }
 
   Widget _submitButton() {
-    return ElevatedButton(
-      onPressed: handleSubmit,
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.all(15),
-        backgroundColor: const Color(0xffef6f3c),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(26),
-          side: const BorderSide(color: Colors.white, width: 4),
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: handleSubmit,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF6D1F42),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(26),
+          ),
         ),
-      ),
-      child: const Text(
-        "Register Here",
-        style: TextStyle(color: Colors.white, fontSize: 18),
+        child: const Text(
+          "Daftar Sekarang",
+          style: TextStyle(color: Colors.white, fontSize: 17),
+        ),
       ),
     );
   }
-  Widget _buildLoginText() {
+
+  Widget _loginText() {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -537,27 +446,26 @@ InputDecoration _dropdownDecoration() {
           MaterialPageRoute(builder: (_) => const LoginScreen()),
         );
       },
-      child: RichText(
-        textAlign: TextAlign.center,
-        text: const TextSpan(
-          children: [
-            TextSpan(
-              text: "Sudah punya akun? ",
-              style: TextStyle(
-                color: Color(0xff6d1f42),
-                fontSize: 14,
+      child: const Padding(
+        padding: EdgeInsets.only(top: 10),
+        child: Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: "Sudah punya akun? ",
+                style: TextStyle(color: Color(0xFF6D1F42)),
               ),
-            ),
-            TextSpan(
-              text: "Log in",
-              style: TextStyle(
-                color: Color(0xffef6f3c),
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                decoration: TextDecoration.underline,
-              ),
-            ),
-          ],
+              TextSpan(
+                text: "Login",
+                style: TextStyle(
+                  color: Color(0xFF275185),
+                  fontWeight: FontWeight.bold,
+                  decoration: TextDecoration.underline,
+                ),
+              )
+            ],
+          ),
+          textAlign: TextAlign.center,
         ),
       ),
     );

@@ -1,7 +1,8 @@
-
 import 'package:flutter/material.dart';
+import 'package:flutter_project_ppkd/data/local/preference_handler.dart';
 import 'package:flutter_project_ppkd/service/api.dart';
 import 'package:flutter_project_ppkd/views/auth/bottom_nav.dart';
+import 'package:flutter_project_ppkd/views/auth/register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,14 +23,14 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffefce7b),
+      backgroundColor: const Color(0xfff5f5f5),
       body: Stack(
         children: [
-          _buildBackground(),
+          _backgroundDecor(),
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
-              child: _buildMainCard(),
+              child: _mainCard(),
             ),
           ),
         ],
@@ -37,101 +38,121 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildBackground() {
+  // ============================================================
+  // BACKGROUND (SAMA DENGAN REGISTER)
+  // ============================================================
+  Widget _backgroundDecor() {
     return Stack(
       children: [
         Positioned(
-          top: -80,
-          left: -80,
-          child: _circle(250, const Color(0xffd3b6d3), opacity: .6),
+          top: -120,
+          right: -80,
+          child:
+              _circle(280, const Color(0xFFD3B6D3).withOpacity(.35)),
         ),
         Positioned(
-          bottom: -120,
-          right: -100,
-          child: _circle(360, const Color(0xffef6f3c), opacity: .4),
+          bottom: -150,
+          left: -100,
+          child:
+              _circle(340, const Color(0xFF275185).withOpacity(.25)),
         ),
       ],
     );
   }
 
-  Widget _circle(double size, Color color, {double opacity = 1}) {
+  Widget _circle(double size, Color color) {
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: color.withOpacity(opacity),
         shape: BoxShape.circle,
+        color: color,
       ),
     );
   }
 
-  Widget _buildMainCard() {
+  // ============================================================
+  // MAIN CARD
+  // ============================================================
+  Widget _mainCard() {
     return Container(
-      width: 340,
+      width: 360,
+      padding: const EdgeInsets.all(26),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: const [BoxShadow(blurRadius: 20, color: Colors.black26)],
+        borderRadius: BorderRadius.circular(40),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          )
+        ],
       ),
-      padding: const EdgeInsets.all(20),
       child: Form(
         key: _formKey,
         child: Column(
           children: [
-            _buildHeader(),
-            const SizedBox(height: 15),
-            _buildForm(),
+            _header(),
+            const SizedBox(height: 10),
+            _formFields(),            
+            const SizedBox(height: 10),
+            _registerText(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Text(
-      "Log In",
+  // ============================================================
+  // HEADER TITLE
+  // ============================================================
+  Widget _header() {
+    return const Text(
+      "Login",
       style: TextStyle(
-        fontWeight: FontWeight.bold,
-        fontSize: 32,
-        foreground: Paint()
-          ..shader = const LinearGradient(
-            colors: [
-              Color(0xff6d1f42),
-              Color(0xffef6f3c),
-              Color(0xff6d1f42),
-            ],
-          ).createShader(const Rect.fromLTWH(0, 0, 200, 100)),
+        fontWeight: FontWeight.w900,
+        fontSize: 30,
+        color: Color(0xFF6D1F42),
       ),
     );
   }
 
-  Widget _buildForm() {
+  // ============================================================
+  // FORM FIELDS
+  // ============================================================
+  Widget _formFields() {
     return Column(
       children: [
         _inputField(
           label: "Email",
           icon: Icons.email,
           controller: emailCtrl,
-          hint: "contoh: nama@example.com",
+          hint: "email@example.com",
           validator: (value) {
-            if (value == null || value.isEmpty) return "Email tidak boleh kosong";
+            if (value == null || value.isEmpty) return "Email wajib diisi";
             if (!RegExp(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
                 .hasMatch(value)) {
-              return "Format email tidak valid";
+              return "Format email salah";
             }
             return null;
           },
         ),
+
         const SizedBox(height: 15),
 
         _passwordField(),
+
         const SizedBox(height: 25),
 
-        _submitButton(),
+        _loginButton(),
       ],
     );
   }
 
+  // ============================================================
+  // GENERIC INPUT FIELD (MATCH REGISTER STYLE)
+  // ============================================================
   Widget _inputField({
     required String label,
     required IconData icon,
@@ -143,11 +164,17 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(children: [
-          Icon(icon, size: 18, color: Color(0xff6d1f42)),
+          Icon(icon, size: 18, color: const Color(0xFF6D1F42)),
           const SizedBox(width: 6),
-          Text(label, style: const TextStyle(color: Color(0xff6d1f42))),
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF6D1F42),
+            ),
+          ),
         ]),
-        const SizedBox(height: 3),
+        const SizedBox(height: 6),
 
         TextFormField(
           controller: controller,
@@ -155,10 +182,20 @@ class _LoginScreenState extends State<LoginScreen> {
           decoration: InputDecoration(
             hintText: hint,
             filled: true,
-            fillColor: Colors.white.withOpacity(.6),
+            fillColor: Colors.white.withOpacity(.7),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
-              borderSide: const BorderSide(color: Color(0xff6d1f42), width: 3),
+              borderRadius: BorderRadius.circular(26),
+              borderSide: const BorderSide(
+                color: Color(0xFF6D1F42),
+                width: 2,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(26),
+              borderSide: const BorderSide(
+                color: Color(0xFF275185),
+                width: 2.6,
+              ),
             ),
           ),
         ),
@@ -166,38 +203,54 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // ============================================================
+  // PASSWORD FIELD
+  // ============================================================
   Widget _passwordField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(children: const [
-          Icon(Icons.lock, size: 18, color: Color(0xff6d1f42)),
+          Icon(Icons.lock, size: 18, color: Color(0xFF6D1F42)),
           SizedBox(width: 6),
-          Text("Password", style: TextStyle(color: Color(0xff6d1f42))),
+          Text(
+            "Password",
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF6D1F42),
+            ),
+          ),
         ]),
         const SizedBox(height: 6),
 
         TextFormField(
           controller: passwordCtrl,
           obscureText: !showPassword,
-          validator: (value) {
-            if (value!.isEmpty) return "Password tidak boleh kosong";
-            return null;
-          },
+          validator: (v) =>
+              v!.isEmpty ? "Password wajib diisi" : null,
           decoration: InputDecoration(
-            hintText: "Masukkan password",
+            hintText: "Minimal 6 karakter",
             filled: true,
-            fillColor: Colors.white.withOpacity(.6),
+            fillColor: Colors.white.withOpacity(.7),
             suffixIcon: IconButton(
               icon: Icon(
                 showPassword ? Icons.visibility_off : Icons.visibility,
-                color: const Color(0xff6d1f42),
+                color: const Color(0xFF6D1F42),
               ),
-              onPressed: () => setState(() => showPassword = !showPassword),
+              onPressed: () =>
+                  setState(() => showPassword = !showPassword),
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
-              borderSide: const BorderSide(color: Color(0xff6d1f42), width: 3),
+              borderRadius: BorderRadius.circular(26),
+              borderSide: const BorderSide(
+                color: Color(0xFF6D1F42),
+                width: 2,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(26),
+              borderSide:
+                  const BorderSide(color: Color(0xFF275185), width: 2.6),
             ),
           ),
         ),
@@ -205,56 +258,97 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _submitButton() {
-    return ElevatedButton(
-      onPressed: isLoading ? null : _handleLogin,
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.all(15),
-        backgroundColor: const Color(0xffef6f3c),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(26),
-          side: const BorderSide(color: Colors.white, width: 4),
+  // ============================================================
+  // LOGIN BUTTON (MATCH REGISTER)
+  // ============================================================
+  Widget _loginButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : _handleLogin,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF6D1F42),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(26),
+          ),
+        ),
+        child: isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text(
+                "Masuk",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                ),
+              ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // LOGIN PROCESS
+  // ============================================================
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => isLoading = true);
+
+    final response =
+        await AuthAPI.login(emailCtrl.text.trim(), passwordCtrl.text.trim());
+
+    setState(() => isLoading = false);
+
+    if (response.data != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Login berhasil")),
+      );
+      final token = response.data!.token;
+      print(token);
+      PreferenceHandler.saveToken(token!);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+            builder: (context) => const BottomNavAbsensi()),
+      );
+
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email atau password salah")),
+      );
+    }
+  }
+  Widget _registerText() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const RegisterScreen()),
+        );
+      },
+      child: const Padding(
+        padding: EdgeInsets.only(top: 10),
+        child: Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: "Belum punya akun? ",
+                style: TextStyle(color: Color(0xFF6D1F42)),
+              ),
+              TextSpan(
+                text: "Register",
+                style: TextStyle(
+                  color: Color(0xFF275185),
+                  fontWeight: FontWeight.bold,
+                  decoration: TextDecoration.underline,
+                ),
+              )
+            ],
+          ),
+          textAlign: TextAlign.center,
         ),
       ),
-      child: isLoading
-          ? const CircularProgressIndicator(color: Colors.white)
-          : const Text(
-              "Log In",
-              style: TextStyle(color: Colors.white, fontSize: 18),
-            ),
     );
   }
-Future<void> _handleLogin() async {
-  if (!_formKey.currentState!.validate()) return;
-
-  setState(() => isLoading = true);
-
-  final response = await AuthAPI.login(emailCtrl.text, passwordCtrl.text);
-
-  // bool isSuccess = await AuthAPI.login(
-  //   emailCtrl.text.trim(),
-  //   passwordCtrl.text.trim(),
-  // );
-
-  setState(() => isLoading = false);
-
-  if (response.data != null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Login berhasil")),
-    );
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const BottomNavAbsensi()),
-    );
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Email atau password salah")),
-    );
-  }
-}
-
-
-
 
 }

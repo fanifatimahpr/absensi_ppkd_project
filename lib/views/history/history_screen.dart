@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_project_ppkd/data/local/preference_handler.dart';
+import 'package:flutter_project_ppkd/service/api.dart';
 import 'package:intl/intl.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -12,86 +14,179 @@ class _HistoryScreenState extends State<HistoryScreen>
     with SingleTickerProviderStateMixin {
   late TabController tabController;
 
+  List<Map<String, dynamic>> rawAttendance = [];
+  bool isLoading = true;
+
   @override
   void initState() {
     super.initState();
     tabController = TabController(length: 3, vsync: this);
+    loadData();
   }
 
+  // --------------------------------------------------------------------------
+  // LOAD DATA AMAN (ANTI ERROR FORMAT API)
+  // --------------------------------------------------------------------------
+  Future<void> loadData() async {
+    try {
+      setState(() => isLoading = true);
+
+      final data = await AuthAPI.getAttendanceHistory(90);
+
+      if (data is List) {
+        rawAttendance = data.map<Map<String, dynamic>>((e) {
+          return {
+            "date": e["date"] ?? "",
+            "time": e["time"] ?? "",
+            "type": e["type"] ?? "",
+          };
+        }).toList();
+      } else {
+        rawAttendance = [];
+      }
+    } catch (e) {
+      debugPrint("Error load attendance: $e");
+      rawAttendance = [];
+    }
+
+    if (mounted) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  // --------------------------------------------------------------------------
   @override
   void dispose() {
     tabController.dispose();
     super.dispose();
   }
 
+  // --------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xfff5f5f5),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF6D1F42),
-        title: const Text(
-          "Riwayat Absen",
-          style: TextStyle(color: Colors.white),
-        ),
-        centerTitle: true,
-        elevation: 0,
-      ),
       body: Stack(
         children: [
-          /// ---- CONTENT ----
-          Padding(
-            padding: const EdgeInsets.only(top: 70),
-            child: TabBarView(
-              controller: tabController,
+          _backgroundDecor(),
+
+          /// TITLE + TAB
+          Positioned(
+            top: 40,
+            left: 20,
+            right: 20,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHistoryList(filterDays(7)),
-                _buildHistoryList(filterDays(60)),
-                _buildHistoryList(filterDays(90)),
+                const Text(
+                  "Riwayat Absensi",
+                  style: TextStyle(
+                    color: Color(0xFF6D1F42),
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _tabBar(),
               ],
             ),
           ),
 
-          /// ---- FLOATING TAB BAR ----
-          Positioned(
-            top: 10,
-            left: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              height: 55,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(40),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
+          /// CONTENT
+          Padding(
+            padding: const EdgeInsets.only(top: 150),
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : TabBarView(
+                    controller: tabController,
+                    children: [
+                      _buildHistoryList(_filterDays(7)),
+                      _buildHistoryList(_filterDays(60)),
+                      _buildHistoryList(_filterDays(90)),
+                    ],
                   ),
-                ],
-              ),
-              child: TabBar(
-                controller: tabController,
-                indicator: const UnderlineTabIndicator(
-                  borderSide: BorderSide(width: 3, color: Color(0xFF6D1F42)),
-                  insets: EdgeInsets.only(left: 30, right: 30),
-                ),
-                unselectedLabelColor: const Color(0xFF6D1F42),
-                tabs: const [
-                  Tab(text: "7 Hari"),
-                  Tab(text: "60 Hari"),
-                  Tab(text: "90 Hari"),
-                ],
-              ),
-            ),
           ),
         ],
       ),
     );
   }
 
-  /// ------ LIST BUILDER -------
+  // --------------------------------------------------------------------------
+  // TAB BAR
+  // --------------------------------------------------------------------------
+  Widget _tabBar() {
+    return TabBar(
+      controller: tabController,
+      labelColor: const Color(0xFF6D1F42),
+      unselectedLabelColor: const Color(0xFF6D1F42).withOpacity(.5),
+      labelStyle: const TextStyle(
+        fontWeight: FontWeight.w700,
+        fontSize: 14,
+      ),
+      indicator: const UnderlineTabIndicator(
+        borderSide: BorderSide(
+          color: Color(0xFF6D1F42),
+          width: 3,
+        ),
+        insets: EdgeInsets.symmetric(horizontal: 20),
+      ),
+      tabs: const [
+        Tab(text: "7 Hari"),
+        Tab(text: "60 Hari"),
+        Tab(text: "90 Hari"),
+      ],
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // SAFE DATE PARSER
+  // --------------------------------------------------------------------------
+  DateTime? _safeParseDate(String date) {
+    try {
+      return DateTime.parse(date);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // GROUP DATA DAN FILTER
+  // --------------------------------------------------------------------------
+  List<Map<String, dynamic>> _filterDays(int days) {
+    final now = DateTime.now();
+    Map<String, Map<String, dynamic>> grouped = {};
+
+    for (var item in rawAttendance) {
+      String date = item["date"];
+      DateTime? d = _safeParseDate(date);
+
+      if (d == null) continue;
+
+      if (d.isAfter(now.subtract(Duration(days: days)))) {
+        grouped.putIfAbsent(date, () {
+          return {
+            "date": d,
+            "checkIn": "--:--",
+            "checkOut": "--:--",
+          };
+        });
+
+        if (item["type"] == "in") {
+          grouped[date]!["checkIn"] = item["time"];
+        } else if (item["type"] == "out") {
+          grouped[date]!["checkOut"] = item["time"];
+        }
+      }
+    }
+
+    var finalList = grouped.values.toList();
+    finalList.sort((a, b) => b["date"].compareTo(a["date"]));
+    return finalList;
+  }
+
+  // --------------------------------------------------------------------------
+  // LIST UI
+  // --------------------------------------------------------------------------
   Widget _buildHistoryList(List<Map<String, dynamic>> list) {
     if (list.isEmpty) {
       return const Center(
@@ -103,59 +198,42 @@ class _HistoryScreenState extends State<HistoryScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
       itemCount: list.length,
       itemBuilder: (context, index) {
         final item = list[index];
 
         return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(20),
+          margin: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(26),
+            borderRadius: BorderRadius.circular(40),
             boxShadow: [
               BoxShadow(
                 color: Colors.black12,
                 blurRadius: 8,
                 offset: const Offset(0, 4),
-              ),
+              )
             ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.calendar_month, color: Color(0xFF6D1F42)),
-                  const SizedBox(width: 8),
-                  Text(
-                    formatDate(item['date']),
-                    style: const TextStyle(
-                      color: Color(0xFF6D1F42),
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+              _dateHeader(item['date']),
+              const SizedBox(height: 22),
 
-              const SizedBox(height: 12),
-
-              _historyRow(
-                icon: Icons.login_rounded,
-                title: "Masuk",
-                value: item['checkIn'],
+              _historyItem(
                 color: const Color(0xFF6D1F42),
+                title: "Waktu Masuk",
+                time: item['checkIn'],
               ),
+              const SizedBox(height: 16),
 
-              const SizedBox(height: 8),
-
-              _historyRow(
-                icon: Icons.logout_rounded,
-                title: "Keluar",
-                value: item['checkOut'],
-                color: const Color(0xff2A4D7F),
+              _historyItem(
+                color: const Color(0xFF275185),
+                title: "Waktu Keluar",
+                time: item['checkOut'],
               ),
             ],
           ),
@@ -164,71 +242,117 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
-  /// ------ ROW ITEM ------
-  Widget _historyRow({
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color color,
-  }) {
+  // --------------------------------------------------------------------------
+  // DATE HEADER
+  // --------------------------------------------------------------------------
+  Widget _dateHeader(DateTime date) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, size: 20, color: color),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.black87,
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF6D1F42).withOpacity(.15),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Icon(
+            Icons.calendar_month,
+            size: 22,
+            color: Color(0xFF6D1F42),
+          ),
         ),
+        const SizedBox(width: 12),
         Text(
-          value,
-          style: TextStyle(
-            color: color,
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
+          DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(date),
+          style: const TextStyle(
+            color: Color(0xFF6D1F42),
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
           ),
         ),
       ],
     );
   }
 
-  /// ---- UTIL FORMAT ----
-  String formatDate(DateTime date) {
-    return DateFormat('dd MMMM yyyy', 'id_ID').format(date);
+  // --------------------------------------------------------------------------
+  // ITEM UI
+  // --------------------------------------------------------------------------
+  Widget _historyItem({
+    required Color color,
+    required String title,
+    required String time,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withOpacity(.18),
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(.15),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Icon(
+              Icons.access_time_filled,
+              size: 20,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF6D1F42),
+              ),
+            ),
+          ),
+          Text(
+            time,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  List<Map<String, dynamic>> filterDays(int days) {
-    final now = DateTime.now();
+  // --------------------------------------------------------------------------
+  // BACKGROUND DECORATION
+  // --------------------------------------------------------------------------
+  Widget _backgroundDecor() {
+    return Stack(
+      children: [
+        Positioned(
+          top: -120,
+          right: -80,
+          child: _circle(280, const Color(0xFFD3B6D3).withOpacity(.25)),
+        ),
+        Positioned(
+          bottom: -150,
+          left: -100,
+          child: _circle(340, const Color(0xFF275185).withOpacity(.25)),
+        ),
+      ],
+    );
+  }
 
-    final list = [
-      {'date': now, 'checkIn': "08:00", 'checkOut': "16:00"},
-      {
-        'date': now.subtract(const Duration(days: 3)),
-        'checkIn': "08:12",
-        'checkOut': "16:20",
-      },
-    ];
-
-    return list.where((e) {
-      final date = e['date'] as DateTime?;
-      if (date == null) return false;
-
-      return date.isAfter(now.subtract(Duration(days: days)));
-    }).toList();
+  Widget _circle(double size, Color color) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+      ),
+    );
   }
 }
