@@ -77,7 +77,6 @@ class _HistoryScreenState extends State<HistoryScreen>
                   borderSide: BorderSide(width: 3, color: Color(0xFF6D1F42)),
                   insets: EdgeInsets.only(left: 30, right: 30),
                 ),
-
                 unselectedLabelColor: const Color(0xFF6D1F42),
                 tabs: const [
                   Tab(text: "7 Hari"),
@@ -165,6 +164,7 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
+  /// ------ ROW ITEM ------
   Widget _historyRow({
     required IconData icon,
     required String title,
@@ -207,6 +207,7 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
+  /// ---- UTIL FORMAT ----
   String formatDate(DateTime date) {
     return DateFormat('dd MMMM yyyy', 'id_ID').format(date);
   }

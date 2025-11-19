@@ -18,6 +18,7 @@ class _MapsScreenState extends State<MapsScreen>
 
   String? currentAddress = "Mendeteksi lokasi...";
 
+  /// Lokasi kantor
   LatLng kantorLocation = const LatLng(-6.175392, 106.827153);
 
   bool isCheckedIn = false;
@@ -44,7 +45,8 @@ class _MapsScreenState extends State<MapsScreen>
       begin: const Offset(0, 0.1),
       end: Offset.zero,
     ).animate(
-        CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
+    );
 
     _fadeAnim = Tween<double>(begin: 0, end: 1).animate(_animController);
 
@@ -116,8 +118,7 @@ class _MapsScreenState extends State<MapsScreen>
       backgroundColor: const Color(0xfff5f5f5),
       appBar: AppBar(
         backgroundColor: const Color(0xFF6D1F42),
-        title:
-            const Text("Absensi Lokasi", style: TextStyle(color: Colors.white)),
+        title: const Text("Absensi Lokasi", style: TextStyle(color: Colors.white)),
         centerTitle: true,
       ),
       body: FadeTransition(
@@ -154,7 +155,8 @@ class _MapsScreenState extends State<MapsScreen>
       onMapCreated: (controller) {
         _mapController = controller;
         controller.animateCamera(
-            CameraUpdate.newLatLngZoom(currentPosition!, 16));
+          CameraUpdate.newLatLngZoom(currentPosition!, 16),
+        );
       },
       myLocationEnabled: true,
       myLocationButtonEnabled: true,
@@ -176,7 +178,7 @@ class _MapsScreenState extends State<MapsScreen>
   }
 
   // ===========================================================
-  // ADDRESS BOX TEMA ELEGAN
+  // ADDRESS BOX
   // ===========================================================
   Widget _buildCurrentAddressBox() {
     return Container(
@@ -186,9 +188,10 @@ class _MapsScreenState extends State<MapsScreen>
         color: const Color(0xFF6D1F42),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 6,
-              offset: const Offset(0, -3))
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 6,
+            offset: const Offset(0, -3),
+          ),
         ],
       ),
       child: Row(
@@ -199,9 +202,10 @@ class _MapsScreenState extends State<MapsScreen>
             child: Text(
               currentAddress ?? "Mendeteksi lokasi...",
               style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500),
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -210,7 +214,7 @@ class _MapsScreenState extends State<MapsScreen>
   }
 
   // ===========================================================
-  // BOTTOM CARD BUTTON MASUK / KELUAR
+  // ACTION CARD (MASUK / KELUAR)
   // ===========================================================
   Widget _buildActionCard() {
     return Container(
@@ -219,7 +223,7 @@ class _MapsScreenState extends State<MapsScreen>
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
         boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4))
+          BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4)),
         ],
       ),
       child: Column(
@@ -260,10 +264,10 @@ class _MapsScreenState extends State<MapsScreen>
                     backgroundColor:
                         isCheckedIn ? Colors.grey : const Color(0xFF6D1F42),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30)),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                   ),
-                  child: const Text("Masuk",
-                      style: TextStyle(color: Colors.white)),
+                  child: const Text("Masuk", style: TextStyle(color: Colors.white)),
                 ),
               ),
               const SizedBox(width: 14),
@@ -275,10 +279,10 @@ class _MapsScreenState extends State<MapsScreen>
                     backgroundColor:
                         !isCheckedIn ? Colors.grey : const Color(0xFF275185),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30)),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                   ),
-                  child: const Text("Keluar",
-                      style: TextStyle(color: Colors.white)),
+                  child: const Text("Keluar", style: TextStyle(color: Colors.white)),
                 ),
               ),
             ],
@@ -288,9 +292,6 @@ class _MapsScreenState extends State<MapsScreen>
     );
   }
 
-  // ===========================================================
-  // ITEM RIWAYAT
-  // ===========================================================
   Widget _historyItem({
     required String title,
     required String time,
@@ -312,16 +313,19 @@ class _MapsScreenState extends State<MapsScreen>
               Container(
                 width: 10,
                 height: 10,
-                decoration:
-                    BoxDecoration(color: dotColor, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: dotColor,
+                  shape: BoxShape.circle,
+                ),
               ),
               const SizedBox(width: 8),
               Text(
                 title,
                 style: const TextStyle(
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14),
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
               ),
             ],
           ),
@@ -335,4 +339,3 @@ class _MapsScreenState extends State<MapsScreen>
     );
   }
 }
- 

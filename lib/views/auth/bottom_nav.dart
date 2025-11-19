@@ -14,8 +14,10 @@ class BottomNavAbsensi extends StatefulWidget {
 
 class _BottomNavAbsensiState extends State<BottomNavAbsensi> {
   int currentIndex = 0;
-  
-  final List<Widget> pages = const [HomeScreen(), HistoryScreen(), MapsScreen(),];
+
+
+  // GANTI PAGES MENJADI HALAMAN SEBENARNYA
+  final List<Widget> pages = const [HomeScreen(), HistoryScreen(), MapsScreen()];
 
   final List<Color> activeColors = const [
     Color(0xff6d1f42),
