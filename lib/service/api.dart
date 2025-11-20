@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_project_ppkd/config/endpoint.dart';
 import 'package:flutter_project_ppkd/data/local/preference_handler.dart';
+import 'package:flutter_project_ppkd/data/models/absentoday_model.dart';
 import 'package:flutter_project_ppkd/data/models/user_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,52 +11,14 @@ class AuthAPI {
   static const String baseUrl = "https://appabsensi.mobileprojp.com/api";
 
   // GET TOKEN
-  static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString("token");
-  }
-
-  // // REGISTER
-  // static Future<UserModel> register(Map<String, dynamic> data) async {
-  //   final url = Uri.parse(Endpoint.register);
-
-  //   final response = await http.post(
-  //     url,
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       "Accept": "application/json",
-  //     },
-  //     body: jsonEncode(data),
-  //   );
-
-  //   print("RAW RESPONSE REGISTER: ${response.body}");
-
-  //   bool isJson;
-  //   try {
-  //     jsonDecode(response.body);
-  //     isJson = true;
-  //   } catch (_) {
-  //     isJson = false;
-  //   }
-
-  //   if (!isJson) {
-  //     throw Exception(
-  //       "Server tidak mengembalikan JSON.\n"
-  //       "URL mungkin salah: ${Endpoint.register}\n"
-  //       "Response: ${response.body}",
-  //     );
-  //   }
-
-  //   final json = jsonDecode(response.body);
-
-  //   // Simpan token jika tersedia
-  //   if (response.statusCode == 200 && json['token'] != null) {
-  //     final prefs = await SharedPreferences.getInstance();
-  //     await prefs.setString("token", json['token']);
-  //   }
-
-  //   return UserModel.fromJson(json);
+  // static Future<String?> getToken() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   return prefs.getString("token");
   // }
+  static Future<String?> getToken() async {
+  return await PreferenceHandler.getToken();
+}
+
   // REGISTER
 static Future<UserModel> register(Map<String, dynamic> data) async {
   final url = Uri.parse(Endpoint.register);
@@ -187,53 +150,99 @@ static Future<UserModel> login(String email, String password) async {
   }
 
   // GET TODAY ATTENDANCE
-   static Future<Map<String, dynamic>?> getTodayAttendance(String today) async {
-    final token = await getToken();
-    final url = Uri.parse("${Endpoint.history}?date=$today");
+ static Future<absenTodayModel?> getTodayAttendance() async {
+  final token = await PreferenceHandler.getToken();
+  final url = Uri.parse(Endpoint.absenToday);
 
-    final response = await http.get(
-      url,
-      headers: {
-        "Authorization": "Bearer $token",
-        "Accept": "application/json",
-      },
-    );
+  final response = await http.get(
+    url,
+    headers: {
+      "Authorization": "Bearer $token",
+      "Accept": "application/json",
+    },
+  );
 
-    print("TODAY HISTORY RESPONSE: ${response.body}");
+  print("ABSEN TODAY RESPONSE: ${response.body}");
 
-    final json = jsonDecode(response.body);
+  return absenTodayModelFromJson(response.body);
+}
 
-    if (json["data"] == null || json["data"].isEmpty) return null;
-
-    return json["data"][0];
-  }
 
   //GET HISTORY 
-  static Future<List<dynamic>> getAttendanceHistory(int days) async {
-    final token = await getToken();
-    final url = Uri.parse("${Endpoint.history}?days=$days");
+  // static Future<List<dynamic>> getAttendanceHistory(int days) async {
+  //   final token = await getToken();
+  //   final url = Uri.parse("${Endpoint.history}?days=$days");
 
-    final response = await http.get(
-      url,
-      headers: {
-        "Authorization": "Bearer $token",
-        "Accept": "application/json",
-      },
-    );
+  //   final response = await http.get(
+  //     url,
+  //     headers: {
+  //       "Authorization": "Bearer $token",
+  //       "Accept": "application/json",
+  //     },
+  //   );
 
-    print("HISTORY RESPONSE: ${response.body}");
+  //   print("HISTORY RESPONSE: ${response.body}");
 
-    final json = jsonDecode(response.body);
-    return json["data"] ?? [];
+  //   final json = jsonDecode(response.body);
+  //   return json["data"] ?? [];
+  // }
+
+  static Future<List<Map<String, dynamic>>> getAttendanceHistory(int days) async {
+  final token = await getToken();
+  final url = Uri.parse("${Endpoint.history}?days=$days");
+
+  final response = await http.get(
+    url,
+    headers: {
+      "Authorization": "Bearer $token",
+      "Accept": "application/json",
+    },
+  );
+
+  print("HISTORY RESPONSE: ${response.body}");
+
+  final json = jsonDecode(response.body);
+
+  if (json["data"] == null) return [];
+
+  final list = <Map<String, dynamic>>[];
+
+  for (var item in json["data"]) {
+    final date = item["attendance_date"] ?? "";
+    final inTime = item["check_in_time"];
+    final outTime = item["check_out_time"];
+
+    if (inTime != null) {
+      list.add({
+        "date": date,
+        "time": inTime,
+        "type": "in",
+      });
+    }
+
+    if (outTime != null) {
+      list.add({
+        "date": date,
+        "time": outTime,
+        "type": "out",
+      });
+    }
   }
 
-//Update 
+  // SIMPAN LOCAL HISTORY
+  await PreferenceHandler.saveHistory(list);
+
+  return list;
+}
+
+
+
 static Future<Map<String, dynamic>> updateProfile(String name) async {
   final token = await PreferenceHandler.getToken();
 
   final url = Uri.parse(Endpoint.updateUser);
 
-  final response = await http.post(
+  final response = await http.put(
     url,
     headers: {
       "Authorization": "Bearer $token",
@@ -245,16 +254,34 @@ static Future<Map<String, dynamic>> updateProfile(String name) async {
     }),
   );
 
-  final json = jsonDecode(response.body);
-
-  // Jika sukses → simpan data user baru
-  if (response.statusCode == 200 && json["data"] != null) {
-    await PreferenceHandler.saveUserData(json["data"]);
+  // Pastikan body bisa di-parse JSON — tangani error parse
+  Map<String, dynamic> json;
+  try {
+    json = jsonDecode(response.body);
+  } catch (e) {
+    // Jika server tidak return JSON, kembalikan struktur error
+    return {
+      "message": "Server tidak mengembalikan JSON",
+      "status_code": response.statusCode,
+    };
   }
 
+  // Jika sukses (200) dan ada data → simpan ke shared prefs
+  if (response.statusCode == 200 && json["data"] != null) {
+    try {
+      await PreferenceHandler.saveUserData(json["data"]);
+      // juga simpan nama terpisah supaya UI yang membaca getName() ikut terupdate
+      if (json["data"]["name"] != null) {
+        await PreferenceHandler.saveName(json["data"]["name"]);
+      }
+    } catch (e) {
+      // ignore save error, tapi tetap kembalikan response
+      print("Gagal menyimpan user data lokal: $e");
+    }
+  }
+
+  // Kembalikan json mentah supaya UI bisa membaca message/data
   return json;
 }
-
-  
 }
   

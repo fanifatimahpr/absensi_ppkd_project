@@ -37,6 +37,18 @@ class _HomeScreenState extends State<HomeScreen>
 
   late AnimationController _animController;
 
+  String _getInitials(String name) {
+  if (name.trim().isEmpty) return "?";
+
+  List<String> parts = name.trim().split(" ");
+  if (parts.length == 1) {
+    return parts.first[0].toUpperCase();
+  }
+
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+
   @override
 void initState() {
   super.initState();
@@ -82,10 +94,14 @@ void _loadLocalAttendance() async {
   }
 
   // LOAD USER
-  Future<void> initUser() async {
-    final savedName = await PreferenceHandler.getName();
-    setState(() => name = savedName ?? "User");
-  }
+ Future<void> initUser() async {
+  final user = await PreferenceHandler.getUserData();
+
+  setState(() {
+    name = user?["name"] ?? "User";
+  });
+}
+
 
   void getGreeting() {
     final hour = DateTime.now().hour;
@@ -147,7 +163,6 @@ void _loadLocalAttendance() async {
   final response = await AuthAPI.checkIn(body);
 
   setState(() {
-    isCheckedIn = true;
     checkInTime = time;
     checkInLocation = currentAddress;
   });
@@ -179,7 +194,6 @@ void _loadLocalAttendance() async {
   final response = await AuthAPI.checkOut(body);
 
   setState(() {
-    isCheckedIn = false;
     checkOutTime = time;
     checkOutLocation = currentAddress;
   });
@@ -188,35 +202,34 @@ void _loadLocalAttendance() async {
   await PreferenceHandler.saveTodayAttendance({
     "check_in": checkInTime,
     "check_out": time,
-    "check_in_location": checkInLocation,
+    "check_in_location": currentAddress,
     "check_out_location": currentAddress,
   });
 }
 
   // LOAD Riwayat Hari Ini
  void _loadTodayAttendance() async {
-  final todayHistory = await AuthAPI.getAttendanceHistory(1);
-  if (todayHistory.isEmpty) return;
+  final res = await AuthAPI.getTodayAttendance();
 
-  final data = todayHistory[0];
+  if (res == null || res.data == null) return;
+
+  final d = res.data!;
 
   setState(() {
-    checkInTime = data["check_in"] ?? data["check_in_time"];
-    checkOutTime = data["check_out"] ?? data["check_out_time"];
-    checkInLocation = data["check_in_address"];
-    checkOutLocation = data["check_out_address"];
-    isCheckedIn = checkInTime != null && checkOutTime == null;
+    checkInTime = d.checkInTime;
+    checkOutTime = d.checkOutTime;
+    checkInLocation = d.checkInAddress;
+    checkOutLocation = d.checkOutAddress;
+    isCheckedIn = d.checkInTime != null && d.checkOutTime == null;
   });
 
-  // 🔥 UPDATE CACHE LOKAL
   await PreferenceHandler.saveTodayAttendance({
-    "check_in": checkInTime,
-    "check_out": checkOutTime,
-    "check_in_location": checkInLocation,
-    "check_out_location": checkOutLocation,
+    "check_in": d.checkInTime,
+    "check_out": d.checkOutTime,
+    "check_in_location": d.checkInAddress,
+    "check_out_location": d.checkOutAddress,
   });
 }
-
 
   @override
   Widget build(BuildContext context) {
@@ -250,12 +263,19 @@ void _loadLocalAttendance() async {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(color: Color(0xff6D1F42), width: 2),
-            image: const DecorationImage(
-              image: AssetImage("build/assets/images/upin.webp"),
-              fit: BoxFit.cover,
+            color: const Color(0xff6D1F42), // background avatar
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            _getInitials(name),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
+
         const SizedBox(width: 16),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -431,11 +451,10 @@ Widget _attendanceButtons() {
             //BUTTON MASUK
             Expanded(
               child: ElevatedButton(
-                onPressed: isCheckedIn ? null : handleCheckIn,
+                onPressed: handleCheckIn,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 22),
-                  backgroundColor:
-                      isCheckedIn ? Colors.grey : const Color(0xFF275185),
+                  backgroundColor: const Color(0xFF275185),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(35),
                   ),
@@ -463,11 +482,10 @@ Widget _attendanceButtons() {
             // BUTTON KELUAR
             Expanded(
               child: ElevatedButton(
-                onPressed: !isCheckedIn ? null : handleCheckOut,
+                onPressed:  handleCheckOut,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 22),
-                  backgroundColor:
-                      !isCheckedIn ? Colors.grey : const Color(0xFF275185),
+                  backgroundColor: const Color(0xFF275185),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(35),
                   ),

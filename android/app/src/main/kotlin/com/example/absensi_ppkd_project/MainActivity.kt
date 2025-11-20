@@ -1,4 +1,4 @@
-package com.example.absensi_ppkd_project
+package com.ppkd.Snaptrack
 
 import io.flutter.embedding.android.FlutterActivity
 

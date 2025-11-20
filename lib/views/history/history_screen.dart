@@ -24,44 +24,38 @@ class _HistoryScreenState extends State<HistoryScreen>
     loadData();
   }
 
-  // --------------------------------------------------------------------------
+
   // LOAD DATA AMAN (ANTI ERROR FORMAT API)
-  // --------------------------------------------------------------------------
+
   Future<void> loadData() async {
-    try {
-      setState(() => isLoading = true);
+  try {
+    setState(() => isLoading = true);
 
-      final data = await AuthAPI.getAttendanceHistory(90);
+    // 1. MUAT DARI LOCAL DULU
+    rawAttendance = await PreferenceHandler.getHistory();
 
-      if (data is List) {
-        rawAttendance = data.map<Map<String, dynamic>>((e) {
-          return {
-            "date": e["date"] ?? "",
-            "time": e["time"] ?? "",
-            "type": e["type"] ?? "",
-          };
-        }).toList();
-      } else {
-        rawAttendance = [];
-      }
-    } catch (e) {
-      debugPrint("Error load attendance: $e");
-      rawAttendance = [];
+    // 2. MUAT DARI API DAN TIMPA LOCAL
+    final apiData = await AuthAPI.getAttendanceHistory(90);
+
+    if (apiData is List) {
+      rawAttendance = apiData;
     }
 
-    if (mounted) {
-      setState(() => isLoading = false);
-    }
+  } catch (e) {
+    debugPrint("Error load attendance: $e");
   }
 
-  // --------------------------------------------------------------------------
+  if (mounted) {
+    setState(() => isLoading = false);
+  }
+}
+
   @override
   void dispose() {
     tabController.dispose();
     super.dispose();
   }
 
-  // --------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -151,42 +145,43 @@ class _HistoryScreenState extends State<HistoryScreen>
 
   // --------------------------------------------------------------------------
   // GROUP DATA DAN FILTER
-  // --------------------------------------------------------------------------
   List<Map<String, dynamic>> _filterDays(int days) {
-    final now = DateTime.now();
-    Map<String, Map<String, dynamic>> grouped = {};
+  final now = DateTime.now();
+  Map<String, Map<String, dynamic>> grouped = {};
 
-    for (var item in rawAttendance) {
-      String date = item["date"];
-      DateTime? d = _safeParseDate(date);
+  for (var item in rawAttendance) {
+    String date = item["date"];
+    DateTime? d = _safeParseDate(date);
+    if (d == null) continue;
 
-      if (d == null) continue;
+    // Filter range hari
+    if (d.isBefore(now.subtract(Duration(days: days)))) continue;
 
-      if (d.isAfter(now.subtract(Duration(days: days)))) {
-        grouped.putIfAbsent(date, () {
-          return {
-            "date": d,
-            "checkIn": "--:--",
-            "checkOut": "--:--",
-          };
-        });
-
-        if (item["type"] == "in") {
-          grouped[date]!["checkIn"] = item["time"];
-        } else if (item["type"] == "out") {
-          grouped[date]!["checkOut"] = item["time"];
-        }
-      }
+    // Buat grup per tanggal
+    if (!grouped.containsKey(date)) {
+      grouped[date] = {
+        "date": d,
+        "checkIn": "--:--",
+        "checkOut": "--:--",
+      };
     }
 
-    var finalList = grouped.values.toList();
-    finalList.sort((a, b) => b["date"].compareTo(a["date"]));
-    return finalList;
+    // Isi data sesuai tipe
+    if (item["type"] == "in") {
+      grouped[date]!["checkIn"] = item["time"] ?? "--:--";
+    } else if (item["type"] == "out") {
+      grouped[date]!["checkOut"] = item["time"] ?? "--:--";
+    }
   }
 
-  // --------------------------------------------------------------------------
+  // urutkan dari terbaru ke terlama
+  final list = grouped.values.toList()
+    ..sort((a, b) => b["date"].compareTo(a["date"]));
+
+  return list;
+}
+
   // LIST UI
-  // --------------------------------------------------------------------------
   Widget _buildHistoryList(List<Map<String, dynamic>> list) {
     if (list.isEmpty) {
       return const Center(

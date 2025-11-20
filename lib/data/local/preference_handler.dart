@@ -6,7 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class PreferenceHandler {
   static const String tokenKey = "user_token";
   static const String userKey = "user_data";
-  static const String userName = "user_name";
+  static const String userName = "user_name";  
+  static const String attendanceUser = "attendance_user";
 
   // SAVE TOKEN
   static Future<void> saveToken(String token) async {
@@ -57,8 +58,12 @@ class PreferenceHandler {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(tokenKey);
     await prefs.remove(userKey);
-    await prefs.remove("today_attendance");
   }
+  // SAVE USER NAME
+  static Future<void> saveName(String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(userName, name);
+  } 
 
   // GET USER NAME
   static Future<String?> getName() async {
@@ -66,18 +71,36 @@ class PreferenceHandler {
     return prefs.getString(userName);
   }
 
-  // 🔥 SAVE TODAY ATTENDANCE LOCALLY
+  // SAVE TODAY ATTENDANCE LOCALLY
   static Future<void> saveTodayAttendance(Map<String, dynamic> data) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString("today_attendance", jsonEncode(data));
   }
 
-  // 🔥 GET TODAY ATTENDANCE
+  // GET TODAY ATTENDANCE
   static Future<Map<String, dynamic>?> getTodayAttendance() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString("today_attendance");
     if (jsonString == null) return null;
     return jsonDecode(jsonString);
   }
+
+  static const String historyKey = "attendance_history";
+
+  // SAVE
+  static Future<void> saveHistory(List<Map<String, dynamic>> list) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(historyKey, jsonEncode(list));
+  }
+
+  // GET
+  static Future<List<Map<String, dynamic>>> getHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString(historyKey);
+    if (data == null) return [];
+    final List<dynamic> jsonList = jsonDecode(data);
+    return jsonList.map((e) => Map<String, dynamic>.from(e)).toList();
+  }
+
 
 }

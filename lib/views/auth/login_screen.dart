@@ -4,14 +4,14 @@ import 'package:flutter_project_ppkd/service/api.dart';
 import 'package:flutter_project_ppkd/views/auth/bottom_nav.dart';
 import 'package:flutter_project_ppkd/views/auth/register_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class LoginScreenAbs extends StatefulWidget {
+  const LoginScreenAbs({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<LoginScreenAbs> createState() => _LoginScreenAbsState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenAbsState extends State<LoginScreenAbs> {
   final _formKey = GlobalKey<FormState>();
 
   final emailCtrl = TextEditingController();
@@ -38,9 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ============================================================
   // BACKGROUND (SAMA DENGAN REGISTER)
-  // ============================================================
   Widget _backgroundDecor() {
     return Stack(
       children: [
@@ -71,9 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ============================================================
   // MAIN CARD
-  // ============================================================
   Widget _mainCard() {
     return Container(
       width: 360,
@@ -103,10 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
-  // ============================================================
   // HEADER TITLE
-  // ============================================================
   Widget _header() {
     return const Text(
       "Login",
@@ -118,9 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ============================================================
   // FORM FIELDS
-  // ============================================================
   Widget _formFields() {
     return Column(
       children: [
@@ -150,9 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ============================================================
   // GENERIC INPUT FIELD (MATCH REGISTER STYLE)
-  // ============================================================
   Widget _inputField({
     required String label,
     required IconData icon,
@@ -203,9 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ============================================================
   // PASSWORD FIELD
-  // ============================================================
   Widget _passwordField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,9 +245,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ============================================================
   // LOGIN BUTTON (MATCH REGISTER)
-  // ============================================================
   Widget _loginButton() {
     return SizedBox(
       width: double.infinity,
@@ -286,9 +271,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ============================================================
   // LOGIN PROCESS
-  // ============================================================
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 

@@ -82,7 +82,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           );
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
+            MaterialPageRoute(builder: (_) => const LoginScreenAbs()),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -443,7 +443,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          MaterialPageRoute(builder: (_) => const LoginScreenAbs()),
         );
       },
       child: const Padding(

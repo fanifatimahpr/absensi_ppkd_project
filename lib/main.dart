@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_project_ppkd/views/auth/bottom_nav.dart';
 import 'package:flutter_project_ppkd/views/auth/login_screen.dart';
 import 'package:flutter_project_ppkd/views/auth/register_screen.dart';
+import 'package:flutter_project_ppkd/views/auth/splash_screen.dart';
 import 'package:flutter_project_ppkd/views/home/home_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 

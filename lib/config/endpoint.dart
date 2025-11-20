@@ -9,7 +9,7 @@ class Endpoint {
   static String training = "$baseUrl/trainings";    
   static String checkIn = "$baseUrl/absen/check-in";  
   static String checkOut = "$baseUrl/absen/check-out";
-  static String history = "$baseUrl/history";
+  static String history = "$baseUrl/absen/history";
   static String absenToday = "$baseUrl/absen/today";
 
 
